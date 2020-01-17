@@ -17,7 +17,7 @@ async def get_doclist():
     async with websockets.connect(uri) as websocket:
         msg = await websocket.recv()
         logging.debug(f"< {msg}")
-        await websocket.send(json.dumps(getdoclist))
+        await websocket.send(json.dumps(getDocList))
         docstr = await websocket.recv()
         docjson = json.loads(docstr)
         return docjson['result']['qDocList']
