@@ -44,6 +44,74 @@ async def create_app_objectlist(websocket, sid, handle):
     return session_json['result']['qReturn']['qHandle']
 
 
+async def get_all_infos(websocket, sid, handle):
+    """
+    This method returns the handle for a measure object.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return:
+    """
+    all_infos_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetAllInfos',
+        params=dict()
+    )
+    await websocket.send(json.dumps(all_infos_object))
+    all_infos_str = await websocket.recv()
+    logging.info(f"< {all_infos_str}")
+    return
+
+
+async def get_app_layout(websocket, sid, handle):
+    """
+    This method returns the Application Layout information.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return:
+    """
+    applayout_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetAppLayout',
+        params=dict()
+    )
+    await websocket.send(json.dumps(applayout_object))
+    applayout_str = await websocket.recv()
+    logging.info(f"< {applayout_str}")
+    applayout_json = json.loads(applayout_str)
+    return applayout_json['result']['qLayout']
+
+
+async def get_child_infos(websocket, sid, handle):
+    """
+    This method returns the Child Info dictionary.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Parent
+    :return:
+    """
+    all_infos_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetChildInfos',
+        params=dict()
+    )
+    await websocket.send(json.dumps(all_infos_object))
+    all_infos_str = await websocket.recv()
+    logging.info(f"< {all_infos_str}")
+    all_infos_json = json.loads(all_infos_str)
+    return all_infos_json['result']['qInfos']
+
+
 async def get_dimension(websocket, sid, handle, qid):
     """
     This method returns the handle for a dimension object.
@@ -68,17 +136,18 @@ async def get_dimension(websocket, sid, handle, qid):
     return dimension_json['result']['qReturn']['qHandle']
 
 
-async def get_doclist(websocket):
+async def get_doclist(websocket, sid):
     """
     Call GetDocList method from Global Class.
 
     :param websocket: Websocket connection handler.
+    :param sid: Session ID
     :return: List of application dictionaries.
     """
     doclist = dict(
         jsonrpc='2.0',
         handle=-1,
-        id=1,
+        id=sid,
         method='GetDocList',
         params=[]
     )
@@ -107,6 +176,7 @@ async def get_layout(websocket, sid, handle):
     )
     await websocket.send(json.dumps(layout))
     layout_str = await websocket.recv()
+    # pprint.pprint(layout_str, indent=4)
     logging.info(f"< {layout_str}")
     layout_json = json.loads(layout_str)
     return layout_json['result']['qLayout']
@@ -136,18 +206,43 @@ async def get_measure(websocket, sid, handle, qid):
     return measure_json['result']['qReturn']['qHandle']
 
 
-async def get_script(websocket, handle):
+async def get_object(websocket, sid, handle, qid):
+    """
+    This method returns the handle for an object.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Parent
+    :param qid: Id for the object that need to be retrieved
+    :return: Handle for the object
+    """
+    obj = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetObject',
+        params=dict(qId=qid)
+    )
+    await websocket.send(json.dumps(obj))
+    object_str = await websocket.recv()
+    logging.info(f"< {object_str}")
+    object_json = json.loads(object_str)
+    return object_json['result']['qReturn']['qHandle']
+
+
+async def get_script(websocket, sid, handle):
     """
     Calls the GetScript method from the Doc class.
 
     :param websocket: Websocket connection handler
+    :param sid: Session ID
     :param handle: Handle ID for the method.
     :return: App script in bytestream format.
     """
     getscript = dict(
         jsonrpc='2.0',
         handle=handle,
-        id=1,
+        id=sid,
         method='GetScript',
         params={}
     )
@@ -173,10 +268,11 @@ async def open_app(websocket, sid, app_id):
         handle=-1,
         id=sid,
         method='OpenDoc',
-        params=dict(
-            qDocName=app_id,
-            qNoData=True
-        )
+        # params=dict(
+        #     qDocName=app_id,
+        #     qNoData=True
+        # )
+        params=[app_id]
     )
     await websocket.send(json.dumps(opendoc))
     appstr = await websocket.recv()
