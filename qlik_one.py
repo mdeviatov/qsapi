@@ -35,7 +35,7 @@ async def get_doclist(websocket):
 
 
 async def main():
-    async with websockets.connect(uri, ssl=ssl_context) as websocket:
+    async with websockets.connect(uri, ssl=ssl_context, extra_headers=headers) as websocket:
         msg = await websocket.recv()
         logging.info(f"< {msg}")
         # msg_json = json.loads(msg)
@@ -62,10 +62,16 @@ uri = os.getenv('REMOTE_URI')
 workdir = os.getenv('WORKDIR')
 certdir = os.getenv('CERT_DIR')
 
-ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-certfile = os.path.join(certdir, 'server_certfile.pem')
-# keyfile = os.path.join(certdir, 'client_key.pem')
-# ssl_context.load_verify_locations(cafile='root.pem', capath=certdir)
-ssl_context.load_cert_chain(certfile)
+cert_file = os.path.join(certdir, 'client.pem')
+key_file = os.path.join(certdir, 'client_key.pem')
+ca_file = os.path.join(certdir, 'root.pem')
+headers = {'X-Qlik-User': 'UserDirectory=internal; UserId=sa_engine'}
 
+# ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+ssl_context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH, cafile=ca_file)
+ssl_context.load_cert_chain(cert_file, keyfile=key_file)
+# ssl_context.load_verify_locations(cafile=ca_file)
+print(ssl_context.cert_store_stats())
+print(ssl.get_default_verify_paths())
+# raise Exception('OK for now...')
 asyncio.run(main())

@@ -1,3 +1,4 @@
+#!/opt/envs/qlik/bin/python3
 """
 This script prints certificate information
 """
@@ -13,7 +14,7 @@ projectname = "qlik"
 config = my_env.init_env(projectname, __file__)
 certdir = os.getenv('CERT_DIR')
 
-cert_file = 'root.pem'
+cert_file = 'server.pem'
 ffn = os.path.join(certdir, cert_file)
 try:
     cert_dict = ssl._ssl._test_decode_cert(ffn)
