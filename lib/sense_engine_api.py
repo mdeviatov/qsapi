@@ -342,7 +342,8 @@ async def get_script(websocket, sid, handle):
 
 async def open_app(websocket, sid, app_id):
     """
-    Calls the OpenDoc method from the Global class.
+    Calls the OpenDoc method from the Global class. qNoData is set to False to avoid 'Error: All expressions disabled'
+    on the GetMeasure method, in case the measurement description is a formula.
 
     :param websocket: Websocket connection handler
     :param sid: Session ID
@@ -356,7 +357,7 @@ async def open_app(websocket, sid, app_id):
         method='OpenDoc',
         params=dict(
             qDocName=app_id,
-            qNoData=True
+            qNoData=False
         )
     )
     await websocket.send(json.dumps(opendoc))

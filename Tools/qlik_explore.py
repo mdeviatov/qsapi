@@ -21,24 +21,25 @@ async def main():
         doclist = await get_doclist(websocket, sid)
     # For each application collect the information in the stream\application directory
     for doc in doclist:
+        app_name = doc['qTitle']
         stream_dir = set_stream_dir(args.target, doc['qMeta'], workdir)
         logging.info(f"Collecting info for {doc['qDocName']} on {stream_dir}")
-        doc_id = doc['qDocId']
+        # Set and create Application Path
+        app_path = os.path.join(stream_dir, app_name)
+        if os.path.isdir(app_path):
+            shutil.rmtree(app_path)
+        os.mkdir(app_path)
         # New websocket connection is required for each open app.
+        doc_id = doc['qDocId']
         async with set_connection(doc_id, **props) as websocket:
-            dimension_dict = {}
             sid = 0
             msg = await websocket.recv()
             logging.debug(f"< {msg}")
+            # Open Application
             sid += 1
             app_handle = await open_app(websocket, sid, doc_id)
+            # Get Script
             sid += 1
-            app_layout = await get_app_layout(websocket, sid, app_handle)
-            app_name = app_layout['qTitle']
-            app_path = os.path.join(stream_dir, app_name)
-            if os.path.isdir(app_path):
-                shutil.rmtree(app_path)
-            os.mkdir(app_path)
             script = await get_script(websocket, sid, app_handle)
             doc_name = os.path.splitext(doc['qDocName'])[0]
             load_script = os.path.join(app_path, f"{doc_name}.qvs")
@@ -49,6 +50,8 @@ async def main():
             objects_handle = await create_app_objectlist(websocket, sid, app_handle)
             sid += 1
             layout = await get_layout(websocket, sid, objects_handle)
+            # Collect master dimension information
+            dimension_dict = {}
             dimensions = layout['qDimensionList']['qItems']
             for dim in dimensions:
                 sid += 1
@@ -57,23 +60,20 @@ async def main():
                 dimension_data = await get_layout(websocket, sid, dimension_handle)
                 title = dimension_data["qMeta"]["title"]
                 dimension_dict[title] = dimension_data
-            """
+            # Collect master measurement information
+            measure_dict = {}
             measurements = layout['qMeasureList']['qItems']
             for measure in measurements:
                 measure_handle = await get_measure(websocket, sid, app_handle, measure['qInfo']['qId'])
                 measure_data = await get_layout(websocket, sid, measure_handle)
                 title = measure_data["qMeta"]["title"]
                 measure_dict[title] = measure_data
-            """
         dimension_str = json.dumps(dimension_dict, ensure_ascii=False, sort_keys=True, indent=4)
         with open(os.path.join(app_path, 'dimensions.json'), 'w', encoding='utf-8') as fh:
             fh.write(dimension_str)
-        """
         measure_str = json.dumps(measure_dict, ensure_ascii=False, sort_keys=True, indent=4)
         with open(os.path.join(app_path, 'measures.json'), 'w', encoding='utf-8') as fh:
             fh.write(measure_str)
-            """
-
     logging.info("End Application")
 
 

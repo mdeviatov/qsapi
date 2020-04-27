@@ -42,7 +42,6 @@ async def main(app_id):
             for child in sheet_children:
                 if child['qType'] == 'table':
                     print(child['qId'])
-        """
         dimensions = layout['qDimensionList']['qItems']
         for dim in dimensions:
             sid += 1
@@ -63,7 +62,6 @@ async def main(app_id):
     measure_str = json.dumps(measure_dict, ensure_ascii=False, sort_keys=True, indent=4)
     with open(os.path.join(app_path, 'measures.json'), 'w', encoding='utf-8') as fh:
         fh.write(measure_str)
-    """
     logging.info("End Application")
 
 
@@ -72,7 +70,7 @@ projectname = "qlik"
 config = my_env.init_env(projectname, __file__)
 uri = os.getenv('LOCAL_URI')
 workdir = os.getenv('LOCAL_WORKDIR')
-# app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\BF - Communes V2.qvf'
-app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\ansible.qvf'
+app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\BF - Communes V2.qvf'
+# app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\ansible.qvf'
 uri = uri + quote(app)
 asyncio.run(main(app))
