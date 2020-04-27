@@ -4,8 +4,6 @@ API Explorer.
 """
 
 import asyncio
-import os
-import websockets
 from lib import my_env
 from lib.sense_engine_api import *
 from urllib.parse import quote

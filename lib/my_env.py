@@ -64,8 +64,8 @@ def init_loghandler(modulename):
     maxbytes = 1024 * 1024
     rfh = logging.handlers.RotatingFileHandler(logfile, maxBytes=maxbytes, backupCount=5, encoding='utf8')
     # Create Formatter for file
-    formatter_file = logging.Formatter(fmt='%(asctime)s|%(module)s|%(funcName)s|%(lineno)d|%(levelname)s|%(message)s',
-                                       datefmt='%d/%m/%Y|%H:%M:%S')
+    fmt_str = '%(asctime)s|%(name)s|%(module)s|%(funcName)s|%(lineno)d|%(levelname)s|%(message)s'
+    formatter_file = logging.Formatter(fmt=fmt_str, datefmt='%d/%m/%Y|%H:%M:%S')
     # Add Formatter to Rotating File Handler
     rfh.setFormatter(formatter_file)
     # Add Handler to the logger
@@ -79,8 +79,11 @@ def init_loghandler(modulename):
     # Add Formatter to Console Handler
     ch.setFormatter(formatter_console)
     logger.addHandler(ch)
-    # logging.getLogger('neo4j.bolt').setLevel(logging.WARNING)
-    logging.getLogger('httpstream').setLevel(logging.WARNING)
+    logging.getLogger('asyncio').setLevel(logging.WARNING)
+    # logging.getLogger('asyncio.coroutines').setLevel(logging.WARNING)
+    # logging.getLogger('websockets.server').setLevel(logging.WARNING)
+    logging.getLogger('websockets.client').setLevel(logging.WARNING)
+    logging.getLogger('websockets.protocol').setLevel(logging.WARNING)
     return logger
 
 

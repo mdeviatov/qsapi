@@ -4,9 +4,7 @@ The information will be stored in a directory structure (one folder per applicat
 """
 
 import asyncio
-import os
 import shutil
-import websockets
 from lib import my_env
 from lib.sense_engine_api import *
 from urllib.parse import quote
@@ -73,7 +71,7 @@ async def main(app_id):
 projectname = "qlik"
 config = my_env.init_env(projectname, __file__)
 uri = os.getenv('LOCAL_URI')
-workdir = os.getenv('WORKDIR')
+workdir = os.getenv('LOCAL_WORKDIR')
 # app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\BF - Communes V2.qvf'
 app = 'C:\\Users\\dvermeylen\\Documents\\Qlik\\Sense\\Apps\\ansible.qvf'
 uri = uri + quote(app)
