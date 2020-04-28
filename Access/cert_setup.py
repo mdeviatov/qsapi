@@ -4,9 +4,6 @@ This is a proof-of-concept for connection using certificate.
 The information will be stored in a directory structure (one folder per application) that can be synced in git.
 """
 
-import asyncio
-import json
-import logging
 import os
 import ssl
 from lib import my_env

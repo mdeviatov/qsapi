@@ -1,6 +1,5 @@
 """"
-The purpose of this script is to explore the current situation of a Qlik Sense environment: applications in scope, load
-scripts...
+The purpose of this script is to explore a single application in-depth.
 The information will be stored in a directory structure (one folder per application) that can be synced in git.
 """
 
@@ -66,6 +65,7 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
         sheet_handle = await get_object(websocket, sid := sid + 1, handle, sheet['qInfo']['qId'])
         sheet_name = sheet['qMeta']['title']
         sheet_path = os.path.join(app_path, sheet_name)
+        os.mkdir(sheet_path)
         sheet_layout = await get_layout(websocket, sid := sid + 1, sheet_handle)
         my_env.dump_structure(sheet_layout, sheet_path, 'sheet.json')
         sheet_children = sheet_layout['qChildList']['qItems']
@@ -86,9 +86,8 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
                 my_env.dump_structure(child_layout, child_path, f"{title}.json")
     return
 
-
 async def main():
-    global sid
+    global sid, app_to_investigate
     # Connect to engine and collect list of applications
     async with set_connection(**props) as websocket:
         msg = await websocket.recv()
@@ -97,6 +96,8 @@ async def main():
     # For each application collect the information in the stream\application directory
     for doc in doclist:
         app_name = doc['qTitle']
+        if app_name != app_to_investigate:
+            continue
         stream_dir = set_stream_dir(args.target, doc['qMeta'], workdir)
         logging.info(f"Collecting info for {doc['qDocName']} on {stream_dir}")
         # Set and create Application Path
@@ -138,11 +139,14 @@ projectname = "qlik"
 config = my_env.init_env(projectname, __file__)
 # Configure command line arguments and environment
 parser = argparse.ArgumentParser(description="Specify target environment")
-parser.add_argument('-t', '--target', type=str, default='Local', choices=['Local', 'Remote'],
+parser.add_argument('-t', '--target', type=str, default='Remote', choices=['Local', 'Remote'],
                     help='Please provide the target environment (Local, Remote).')
+parser.add_argument('-a', '--app2check', type=str, default='LEZ_Export(3)',
+                    help='Please provide the application to investigate.')
 args = parser.parse_args()
 logging.info("Arguments: {a}".format(a=args))
 props = init_env(args.target)
+app_to_investigate = args.app2check
 workdir = props['workdir']
 sid = 0
 

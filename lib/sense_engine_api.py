@@ -110,21 +110,19 @@ def set_connection(app_id=None, **props):
 def set_stream_dir(destination, meta, workdir):
     """
     Function to calculate the stream directory for the application. If the directory does not exist, it will be created.
+    If application is published then the name of the stream is the subdirectory where to publish the application
+    information. If application is local or not published, then stream is called 'Work'.
 
     :param destination: Destination for query engine: Local (Desktop) or Remote
     :param meta: Application meta directory
     :param workdir: Work Directory (base) for the environment
     :return: stream directory
     """
-    if destination == 'Remote':
-        if meta['published']:
-            stream = meta['stream']['name']
-        else:
-            stream = 'Work'
-        stream_dir = os.path.join(workdir, stream)
-        logging.debug(f"Collecting info for stream {stream}")
-    else:
-        stream_dir = workdir
+    stream = 'Work'
+    if destination == 'Remote' and meta['published']:
+        stream = meta['stream']['name']
+    stream_dir = os.path.join(workdir, stream)
+    logging.debug(f"Collecting info for stream {stream}")
     if not os.path.isdir(stream_dir):
         os.mkdir(stream_dir)
     return stream_dir
@@ -344,6 +342,8 @@ async def open_app(websocket, sid, app_id):
     """
     Calls the OpenDoc method from the Global class. qNoData is set to False to avoid 'Error: All expressions disabled'
     on the GetMeasure method, in case the measurement description is a formula.
+    However setting qNoData to False will load data and may cause applications to fail. It also takes ages for
+    applications to load, and the 'All expressions disabled' error does not add/hide valuable information.
 
     :param websocket: Websocket connection handler
     :param sid: Session ID
@@ -357,12 +357,18 @@ async def open_app(websocket, sid, app_id):
         method='OpenDoc',
         params=dict(
             qDocName=app_id,
-            qNoData=False
+            qNoData=True
         )
     )
     await websocket.send(json.dumps(opendoc))
     appstr = await websocket.recv()
     logging.debug(f"< {appstr}")
     appjson = json.loads(appstr)
-    handle = appjson['result']['qReturn']['qHandle']
-    return handle
+    try:
+        handle = appjson['result']['qReturn']['qHandle']
+        return handle
+    except KeyError:
+        msg = appjson['error']['message']
+        app = appjson['error']['parameter']
+        logging.error(f"Could not open application {app}: {msg}")
+        return False

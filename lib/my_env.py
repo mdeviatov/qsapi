@@ -7,6 +7,7 @@ Also some application specific utilities find their home here.
 import configparser
 import logging
 import logging.handlers
+import json
 import os
 import platform
 import sys
@@ -115,6 +116,24 @@ def get_inifile(projectname):
     envfile = os.path.join(filepath, ".env")
     load_dotenv(dotenv_path=envfile)
     return ini_config
+
+
+def dump_structure(struct, path, filename):
+    """
+    This function takes a python structure, dumps it to a json string and saves the result in a file or the specified
+    directory.
+
+    :param struct: Python structure that need to be written to file.
+    :param path: Path of the resulting file. If path does not exist it will be created.
+    :param filename: Filename of the required file.
+    :return:
+    """
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    struct_str = json.dumps(struct, ensure_ascii=False, sort_keys=True, indent=4)
+    with open(os.path.join(path, filename), 'w', encoding='utf-8') as fh:
+        fh.write(struct_str)
+    return
 
 
 def run_script(path, script_name, *args):
