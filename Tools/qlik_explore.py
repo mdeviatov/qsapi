@@ -11,7 +11,7 @@ from lib import my_env
 from lib.sense_engine_api import *
 
 
-async def dimensions(websocket, handle, dim_list):
+async def dimensions(websocket, handle, dim_list, app_path):
     """
     Coroutine to collect dimension information in dictionary with key dimension name and value the dictionary for this
     dimension.
@@ -19,19 +19,19 @@ async def dimensions(websocket, handle, dim_list):
     :param websocket: Websocket connection
     :param handle: Handle to connect to - this is for the app.
     :param dim_list: List with dimensions from the application.
+    :param app_path: Path for the Application information.
     :return: Dictionary with key dimension name and value the dictionary for the dimension.
     """
     global sid
-    dimension_dict = {}
     for dim in dim_list:
         dimension_handle = await get_dimension(websocket, sid := sid + 1, handle, dim['qInfo']['qId'])
-        dimension_data = await get_layout(websocket, sid := sid + 1, dimension_handle)
-        title = dimension_data["qMeta"]["title"]
-        dimension_dict[title] = dimension_data
-    return dimension_dict
+        dimension_data = await get_properties(websocket, sid := sid + 1, dimension_handle)
+        title = dimension_data["qDim"]["title"]
+        my_env.dump_structure(dimension_data, os.path.join(app_path, 'QSMasterDimensions'), f"{title}.json")
+    return
 
 
-async def measurements(websocket, handle, measure_list):
+async def measurements(websocket, handle, measure_list, app_path):
     """
     Coroutine to collect measurement information in dictionary with key measurement name and value the dictionary for
     this measurement.
@@ -39,16 +39,16 @@ async def measurements(websocket, handle, measure_list):
     :param websocket: Websocket connection
     :param handle: Handle to connect to - this is for the app.
     :param measure_list: List with measurements from the application.
+    :param app_path: Path for the Application storage.
     :return: Dictionary with key measurement name and value the dictionary for the measurement.
     """
     global sid
-    measure_dict = {}
     for measure in measure_list:
         measure_handle = await get_measure(websocket, sid := sid + 1, handle, measure['qInfo']['qId'])
-        measure_data = await get_layout(websocket, sid := sid + 1, measure_handle)
-        title = measure_data["qMeta"]["title"]
-        measure_dict[title] = measure_data
-    return measure_dict
+        measure_data = await get_properties(websocket, sid := sid+1, measure_handle)
+        title = measure_data['qMeasure']['qLabel']
+        my_env.dump_structure(measure_data, os.path.join(app_path, 'QSMasterMeasures'), f"{title}.json")
+    return
 
 
 async def handle_sheets(websocket, handle, sheet_list, app_path):
@@ -79,10 +79,11 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
             else:
                 child_path = os.path.join(sheet_path, child_type)
                 title = child['qData']['title']
-                if len(title) == 0:
+                if isinstance(title, dict) or len(title) == 0:
                     title = child_id
                 child_handle = await get_object(websocket, sid := sid + 1, handle, child_id)
-                child_layout = await get_layout(websocket, sid := sid + 1, child_handle)
+                # child_layout = await get_layout(websocket, sid := sid + 1, child_handle)
+                child_layout = await get_fullpropertytree(websocket, sid := sid+1, child_handle)
                 my_env.dump_structure(child_layout, child_path, f"{title}.json")
     return
 
@@ -112,7 +113,8 @@ async def main():
             logging.debug(f"< {msg}")
             # Open Application
             app_handle = await open_app(websocket, sid := sid+1, doc_id)
-            if not isinstance(app_handle, int):
+            if isinstance(app_handle, str):
+                # Error message found, app_handle needs to be int
                 continue
             # Get Script
             script = await get_script(websocket, sid := sid+1, app_handle)
@@ -124,11 +126,10 @@ async def main():
             objects_handle = await create_app_objectlist(websocket, sid := sid+1, app_handle)
             layout = await get_layout(websocket, sid := sid+1, objects_handle)
             # Collect master dimension information
-            dimension_dict = await dimensions(websocket, app_handle, layout['qDimensionList']['qItems'])
-            my_env.dump_structure(dimension_dict, app_path, 'dimensions.json')
+            await dimensions(websocket, app_handle, layout['qDimensionList']['qItems'], app_path)
             # Collect master measurement information
-            measure_dict = await measurements(websocket, app_handle, layout['qMeasureList']['qItems'])
-            my_env.dump_structure(measure_dict, app_path, 'measures.json')
+            await measurements(websocket, app_handle, layout['qMeasureList']['qItems'], app_path)
+            # Collect Sheet Information
             await handle_sheets(websocket, app_handle, layout['qAppObjectList']['qItems'], app_path)
     logging.info("End Application")
 

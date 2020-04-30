@@ -242,6 +242,29 @@ async def get_doclist(websocket, sid):
     return docjson['result']['qDocList']
 
 
+async def get_fullpropertytree(websocket, sid, handle):
+    """
+    This method gets the full property tree of the object with handle.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return: Full Property Tree Dictionary
+    """
+    layout = dict(
+        jsonrpc='2.0',
+        handle=handle,
+        id=sid,
+        method='GetFullPropertyTree',
+        params=[]
+    )
+    await websocket.send(json.dumps(layout))
+    object_str = await websocket.recv()
+    logging.debug(f"< {object_str}")
+    object_json = json.loads(object_str)
+    return object_json['result']['qPropEntry']
+
+
 async def get_layout(websocket, sid, handle):
     """
     This method gets the Layout of the object with handle.
@@ -314,6 +337,30 @@ async def get_object(websocket, sid, handle, qid):
     return object_json['result']['qReturn']['qHandle']
 
 
+async def get_properties(websocket, sid, handle):
+    """
+    This method gets the Properties of the object with handle.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return: Layout Dictionary
+    """
+    layout = dict(
+        jsonrpc='2.0',
+        handle=handle,
+        id=sid,
+        method='GetProperties',
+        params=[]
+    )
+    await websocket.send(json.dumps(layout))
+    object_str = await websocket.recv()
+    # pprint.pprint(layout_str, indent=4)
+    logging.debug(f"< {object_str}")
+    object_json = json.loads(object_str)
+    return object_json['result']['qProp']
+
+
 async def get_script(websocket, sid, handle):
     """
     Calls the GetScript method from the Doc class.
@@ -370,5 +417,6 @@ async def open_app(websocket, sid, app_id):
     except KeyError:
         msg = appjson['error']['message']
         app = appjson['error']['parameter']
-        logging.error(f"Could not open application {app}: {msg}")
-        return False
+        log = f"Could not open application {app}: {msg}"
+        logging.error(log)
+        return log

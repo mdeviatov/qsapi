@@ -130,7 +130,8 @@ def dump_structure(struct, path, filename):
     """
     if not os.path.isdir(path):
         os.mkdir(path)
-    struct_str = json.dumps(struct, ensure_ascii=False, sort_keys=True, indent=4)
+    # struct_str = json.dumps(struct, ensure_ascii=False, sort_keys=True, indent=4)
+    struct_str = json.dumps(struct, ensure_ascii=False, indent=2)
     with open(os.path.join(path, filename), 'w', encoding='utf-8') as fh:
         fh.write(struct_str)
     return
