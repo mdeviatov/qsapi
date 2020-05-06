@@ -142,7 +142,7 @@ projectname = "qlik"
 config = my_env.init_env(projectname, __file__)
 # Configure command line arguments and environment
 parser = argparse.ArgumentParser(description="Specify target environment")
-parser.add_argument('-t', '--target', type=str, default='Local', choices=['Local', 'Remote'],
+parser.add_argument('-t', '--target', type=str, default='Remote', choices=['Local', 'Remote'],
                     help='Please provide the target environment (Local, Remote).')
 args = parser.parse_args()
 logging.info("Arguments: {a}".format(a=args))
