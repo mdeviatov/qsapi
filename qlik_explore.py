@@ -1,7 +1,8 @@
+#!/opt/envs/qlik/bin/python
 """"
 The purpose of this script is to explore the current situation of a Qlik Sense environment: applications in scope, load
 scripts...
-The information will be stored in a directory structure (one folder per application) that can be synced in git.
+The information will be stored in a directory structure (one folder per application) that can be synced in gitprocessing.
 """
 
 import argparse
@@ -67,7 +68,9 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
         sheet_name = sheet['qMeta']['title']
         sheet_path = os.path.join(app_path, sheet_name)
         sheet_layout = await get_layout(websocket, sid := sid + 1, sheet_handle)
-        my_env.dump_structure(sheet_layout, sheet_path, 'sheet.json')
+        sheet_props = await get_fullpropertytree(websocket, sid := sid + 1, sheet_handle)
+        title = sheet_props['qProperty']['qMetaDef']['title']
+        my_env.dump_structure(sheet_layout, sheet_path, f'{title}.json')
         sheet_children = sheet_layout['qChildList']['qItems']
         for child in sheet_children:
             try:
