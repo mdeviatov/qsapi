@@ -79,7 +79,7 @@ def init_loghandler(modulename):
                                           datefmt='%H:%M:%S')
     # Add Formatter to Console Handler
     ch.setFormatter(formatter_console)
-    logger.addHandler(ch)
+    # logger.addHandler(ch)
     logging.getLogger('asyncio').setLevel(logging.WARNING)
     # logging.getLogger('asyncio.coroutines').setLevel(logging.WARNING)
     # logging.getLogger('websockets.server').setLevel(logging.WARNING)

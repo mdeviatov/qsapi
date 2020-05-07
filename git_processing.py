@@ -30,5 +30,6 @@ if my_repo.is_dirty(untracked_files=True):
     msg = f"Snapshot from {now}"
     res = my_repo.index.commit(msg)
     my_repo.remotes.origin.push('master')
+    logging.info('Push finished')
 else:
     logging.info("No changes detected")
