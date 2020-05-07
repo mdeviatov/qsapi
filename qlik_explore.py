@@ -2,7 +2,8 @@
 """"
 The purpose of this script is to explore the current situation of a Qlik Sense environment: applications in scope, load
 scripts...
-The information will be stored in a directory structure (one folder per application) that can be synced in gitprocessing.
+The information will be stored in a directory structure (one folder per application) that can be synced in
+git_processing.
 """
 
 import argparse
@@ -119,6 +120,9 @@ async def main():
             if isinstance(app_handle, str):
                 # Error message found, app_handle needs to be int
                 continue
+            # Get App Properties
+            app_props = await get_app_properties(websocket, sid := sid+1, app_handle)
+            my_env.dump_structure(app_props, app_path, "app_properties.json")
             # Get Script
             script = await get_script(websocket, sid := sid+1, app_handle)
             doc_name = os.path.splitext(doc['qDocName'])[0]

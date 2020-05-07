@@ -173,6 +173,29 @@ async def get_app_layout(websocket, sid, handle):
     return applayout_json['result']['qLayout']
 
 
+async def get_app_properties(websocket, sid, handle):
+    """
+    This method returns the Application Property information.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return:
+    """
+    app_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetAppProperties',
+        params=dict()
+    )
+    await websocket.send(json.dumps(app_object))
+    app_str = await websocket.recv()
+    logging.debug(f"< {app_str}")
+    app_json = json.loads(app_str)
+    return app_json['result']['qProp']
+
+
 async def get_child_infos(websocket, sid, handle):
     """
     This method returns the Child Info dictionary.
