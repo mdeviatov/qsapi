@@ -128,6 +128,33 @@ def set_stream_dir(destination, meta, workdir):
     return stream_dir
 
 
+async def configure_reload(websocket, sid):
+    """
+    This method runs a Configure Reload setting for the engine. It should run before the
+    DoReload method.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :return: Handle for the dimension
+    """
+    # Runs on engine so handle is -1.
+    reload_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=-1,
+        method='ConfigureReload',
+        params=dict(
+            qCancelOnScriptError=False,
+            qUseErrorData=True,
+            qInteractOnError=False
+        )
+    )
+    await websocket.send(json.dumps(reload_object))
+    reload_str = await websocket.recv()
+    logging.debug(f"< {reload_str}")
+    return
+
+
 async def do_reload(websocket, sid, handle):
     """
     This method runs a reload for the application.
@@ -137,15 +164,19 @@ async def do_reload(websocket, sid, handle):
     :param handle: Handle for the Application
     :return: Handle for the dimension
     """
+    qparams = dict(
+        qMode=0,
+        qPartial=False,
+        qDebug=False,
+        qReloadId='MyApp'
+    )
     reload_object = dict(
         jsonrpc='2.0',
         id=sid,
         handle=handle,
-        method='DoReload',
+        method='DoReloadEx',
         params=dict(
-            qMode=0,
-            qPartial=False,
-            qDebug=False
+            qParams=qparams
         )
     )
     await websocket.send(json.dumps(reload_object))
@@ -153,7 +184,7 @@ async def do_reload(websocket, sid, handle):
     logging.debug(f"< {reload_str}")
     reload_json = json.loads(reload_str)
     try:
-        return reload_json['result']['qReturn']
+        return reload_json['result']['qResult']['qSuccess']
     except KeyError:
         return False
 
@@ -224,6 +255,27 @@ async def get_app_properties(websocket, sid, handle):
     logging.debug(f"< {app_str}")
     app_json = json.loads(app_str)
     return app_json['result']['qProp']
+
+
+async def get_authenticated_user(websocket, sid):
+    """
+    This method returns the Authenticated User information.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :return:
+    """
+    app_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=-1,
+        method='GetAuthenticatedUser',
+        params=dict()
+    )
+    await websocket.send(json.dumps(app_object))
+    app_str = await websocket.recv()
+    logging.debug(f"< {app_str}")
+    return
 
 
 async def get_child_infos(websocket, sid, handle):
@@ -388,6 +440,30 @@ async def get_object(websocket, sid, handle, qid):
     logging.debug(f"< {object_str}")
     object_json = json.loads(object_str)
     return object_json['result']['qReturn']['qHandle']
+
+
+async def get_progress(websocket, sid, request_id):
+    """
+    This method gets the progress for an application reload.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session SID
+    :param request_id: Request ID for which progress is required
+    :return:
+    """
+    reload_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=-1,
+        method='GetProgress',
+        params=dict(
+            qRequestId=request_id
+        )
+    )
+    await websocket.send(json.dumps(reload_object))
+    reload_str = await websocket.recv()
+    logging.debug(f"< {reload_str}")
+    return
 
 
 async def get_properties(websocket, sid, handle):

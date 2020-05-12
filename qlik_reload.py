@@ -41,6 +41,9 @@ async def main(dryrun=False):
         async with set_connection(doc_id, **props) as websocket:
             msg = await websocket.recv()
             logging.debug(f"< {msg}")
+            # Configure Engine for Reload
+            msg = await configure_reload(websocket, sid := sid+1)
+            logging.debug(f"< {msg}")
             # Open Application
             app_handle = await open_app(websocket, sid := sid+1, doc_id)
             if isinstance(app_handle, str):
@@ -48,12 +51,14 @@ async def main(dryrun=False):
                 logging.fatal(f"Cannot open app {app} for reload, exiting...")
                 break
             if not dryrun:
+                request_id = sid
                 res = await do_reload(websocket, sid := sid+1, app_handle)
                 if res:
                     logging.info(f"App {app} reload done.")
                 else:
                     logging.fatal(f"Issue with reload of app {app}, exiting.")
                     break
+                await get_progress(websocket, sid := sid+1, request_id)
     logging.info("End Application")
 
 
