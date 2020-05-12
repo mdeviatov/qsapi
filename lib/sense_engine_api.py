@@ -128,6 +128,36 @@ def set_stream_dir(destination, meta, workdir):
     return stream_dir
 
 
+async def do_reload(websocket, sid, handle):
+    """
+    This method runs a reload for the application.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return: Handle for the dimension
+    """
+    reload_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='DoReload',
+        params=dict(
+            qMode=0,
+            qPartial=False,
+            qDebug=False
+        )
+    )
+    await websocket.send(json.dumps(reload_object))
+    reload_str = await websocket.recv()
+    logging.debug(f"< {reload_str}")
+    reload_json = json.loads(reload_str)
+    try:
+        return reload_json['result']['qReturn']
+    except KeyError:
+        return False
+
+
 async def get_all_infos(websocket, sid, handle):
     """
     This method returns the handle for a measure object.
