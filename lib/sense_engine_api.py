@@ -2,6 +2,7 @@
 This library consolidates Qlik Sense Engine API methods
 """
 
+import asyncio
 import json
 import logging
 import os
@@ -157,26 +158,23 @@ async def configure_reload(websocket, sid):
 
 async def do_reload(websocket, sid, handle):
     """
-    This method runs a reload for the application.
+    This method runs a reload for the application. Remember to run a get_app_layout after do_reload to commit the
+    changes.
 
     :param websocket: Websocket connection for the handler
     :param sid: Session ID
     :param handle: Handle for the Application
     :return: Handle for the dimension
     """
-    qparams = dict(
-        qMode=0,
-        qPartial=False,
-        qDebug=False,
-        qReloadId='MyApp'
-    )
     reload_object = dict(
         jsonrpc='2.0',
         id=sid,
         handle=handle,
-        method='DoReloadEx',
+        method='DoReload',
         params=dict(
-            qParams=qparams
+            qMode=0,
+            qPartial=False,
+            qDebug=False,
         )
     )
     await websocket.send(json.dumps(reload_object))
@@ -184,9 +182,48 @@ async def do_reload(websocket, sid, handle):
     logging.debug(f"< {reload_str}")
     reload_json = json.loads(reload_str)
     try:
-        return reload_json['result']['qResult']['qSuccess']
+        return reload_json['result']
     except KeyError:
         return False
+
+
+async def do_save(websocket, sid, handle):
+    """
+    This method runs a save for the application. This should be done after a get_app_layout to ensure that changes have
+    been committed.
+    Even if get progress status is finished, do_save may fail if index rebuild is ongoing.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Application
+    :return: Handle for the dimension
+    """
+    sleep = 60
+    reload_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='DoSave',
+        params=dict(
+        )
+    )
+    await websocket.send(json.dumps(reload_object))
+    reload_str = await websocket.recv()
+    logging.debug(f"< {reload_str}")
+    reload_json = json.loads(reload_str)
+    try:
+        return reload_json['result']
+    except KeyError:
+        try:
+            if reload_json['error']['message'] == 'Reload in progress':
+                logging.warning(f"Save app not successful, reload in progress. Wait {sleep} seconds to retry.")
+                await asyncio.sleep(sleep)
+                await do_save(websocket, sid := sid+1, handle)
+            else:
+                logging.error(f"Save app failed with message {reload_json['error']['message']}")
+        except KeyError:
+            logging.error(f"Save app failed {reload_str}")
+    return False
 
 
 async def get_all_infos(websocket, sid, handle):
@@ -444,7 +481,8 @@ async def get_object(websocket, sid, handle, qid):
 
 async def get_progress(websocket, sid, request_id):
     """
-    This method gets the progress for an application reload.
+    This method gets the progress for an application reload. Finished for a Reload Job means that reload is done, but
+    rebuild of the index can be in progress.
 
     :param websocket: Websocket connection for the handler
     :param sid: Session SID
@@ -463,7 +501,8 @@ async def get_progress(websocket, sid, request_id):
     await websocket.send(json.dumps(reload_object))
     reload_str = await websocket.recv()
     logging.debug(f"< {reload_str}")
-    return
+    reload_json = json.loads(reload_str)
+    return reload_json['result']
 
 
 async def get_properties(websocket, sid, handle):

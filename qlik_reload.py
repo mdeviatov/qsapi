@@ -4,7 +4,7 @@ The purpose of this script is to reload Qlik applications. Applications are relo
 """
 
 import argparse
-import asyncio
+# import asyncio
 from lib import my_env
 from lib.sense_engine_api import *
 
@@ -15,6 +15,7 @@ async def main(dryrun=False):
     async with set_connection(**props) as websocket:
         msg = await websocket.recv()
         logging.debug(f"< {msg}")
+        # Get Doclist with all applications
         doclist = await get_doclist(websocket, sid := sid+1)
     # Convert doclist into dictionary with key title and value ID of the document.
     application = {}
@@ -41,9 +42,6 @@ async def main(dryrun=False):
         async with set_connection(doc_id, **props) as websocket:
             msg = await websocket.recv()
             logging.debug(f"< {msg}")
-            # Configure Engine for Reload
-            msg = await configure_reload(websocket, sid := sid+1)
-            logging.debug(f"< {msg}")
             # Open Application
             app_handle = await open_app(websocket, sid := sid+1, doc_id)
             if isinstance(app_handle, str):
@@ -51,14 +49,34 @@ async def main(dryrun=False):
                 logging.fatal(f"Cannot open app {app} for reload, exiting...")
                 break
             if not dryrun:
+                # Configure Engine for Reload
+                msg = await configure_reload(websocket, sid := sid + 1)
+                logging.debug(f"< {msg}")
+                # Reload
                 request_id = sid
-                res = await do_reload(websocket, sid := sid+1, app_handle)
-                if res:
-                    logging.info(f"App {app} reload done.")
+                try:
+                    await asyncio.wait_for(do_reload(websocket, sid := sid+1, app_handle), timeout=60.0)
+                    progress = await get_progress(websocket, sid := sid+1, request_id)
+                    finished = progress['qProgressData']['qFinished']
+                except asyncio.TimeoutError:
+                    # Reload takes longer than allowed wait time
+                    finished = False
+                    while not finished:
+                        sleep = 60
+                        logging.info(f"Wait {sleep} seconds for App {app} reload.")
+                        await asyncio.sleep(sleep)
+                        progress = await get_progress(websocket, sid := sid+1, request_id)
+                        try:
+                            finished = progress['qProgressData']['qFinished']
+                        except KeyError:
+                            finished = False
+                if finished:
+                    logging.info(f"App {app} reload done, now commit change")
+                    # await get_app_layout(websocket, sid := sid+1, app_handle)
+                    await do_save(websocket, sid := sid+1, app_handle)
                 else:
                     logging.fatal(f"Issue with reload of app {app}, exiting.")
                     break
-                await get_progress(websocket, sid := sid+1, request_id)
     logging.info("End Application")
 
 
