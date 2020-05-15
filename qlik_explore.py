@@ -7,7 +7,7 @@ git_processing.
 """
 
 import argparse
-import asyncio
+# import asyncio
 import shutil
 from lib import my_env
 from lib.sense_engine_api import *
@@ -132,6 +132,11 @@ async def main():
             # Collect Sheets, dimensions and measures layout
             objects_handle = await create_app_objectlist(websocket, sid := sid+1, app_handle)
             layout = await get_layout(websocket, sid := sid+1, objects_handle)
+            # Get variable list
+            variables = layout['qVariableList']['qItems']
+            my_env.dump_structure(variables, app_path, "variables.json")
+            connections = await get_connections(websocket, sid := sid+1, app_handle)
+            my_env.dump_structure(connections, app_path, "connections.json")
             # Collect master dimension information
             await dimensions(websocket, app_handle, layout['qDimensionList']['qItems'], app_path)
             # Collect master measurement information

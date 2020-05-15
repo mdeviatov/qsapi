@@ -38,6 +38,12 @@ async def create_app_objectlist(websocket, sid, handle):
                 ),
                 qMeasureListDef=dict(
                     qType='measure'
+                ),
+                qVariableListDef=dict(
+                    qType='variable',
+                    qShowReserved=True,
+                    qShowConfig=True,
+                    qData=dict(tags='/tags')
                 )
             )
         ]
@@ -218,7 +224,7 @@ async def do_save(websocket, sid, handle):
             if reload_json['error']['message'] == 'Reload in progress':
                 logging.warning(f"Save app not successful, reload in progress. Wait {sleep} seconds to retry.")
                 await asyncio.sleep(sleep)
-                await do_save(websocket, sid := sid+1, handle)
+                await do_save(websocket, sid+1, handle)
             else:
                 logging.error(f"Save app failed with message {reload_json['error']['message']}")
         except KeyError:
@@ -336,6 +342,29 @@ async def get_child_infos(websocket, sid, handle):
     logging.debug(f"< {all_infos_str}")
     all_infos_json = json.loads(all_infos_str)
     return all_infos_json['result']['qInfos']
+
+
+async def get_connections(websocket, sid, handle):
+    """
+    This method returns the connections for the application.
+
+    :param websocket: Websocket connection for the handler
+    :param sid: Session ID
+    :param handle: Handle for the Parent
+    :return:
+    """
+    all_infos_object = dict(
+        jsonrpc='2.0',
+        id=sid,
+        handle=handle,
+        method='GetConnections',
+        params=dict()
+    )
+    await websocket.send(json.dumps(all_infos_object))
+    all_infos_str = await websocket.recv()
+    logging.debug(f"< {all_infos_str}")
+    all_infos_json = json.loads(all_infos_str)
+    return all_infos_json['result']['qConnections']
 
 
 async def get_dimension(websocket, sid, handle, qid):
