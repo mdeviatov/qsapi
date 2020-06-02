@@ -134,7 +134,7 @@ async def main():
             layout = await get_layout(websocket, sid := sid+1, objects_handle)
             # Get variable list
             variables = layout['qVariableList']['qItems']
-            my_env.dump_structure(variables, app_path, "variables.json")
+            my_env.dump_structure(variables, app_path, "variables.json", sort_keys=True)
             connections = await get_connections(websocket, sid := sid+1, app_handle)
             my_env.dump_structure(connections, app_path, "connections.json")
             # Collect master dimension information

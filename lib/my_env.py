@@ -118,7 +118,7 @@ def get_inifile(projectname):
     return ini_config
 
 
-def dump_structure(struct, path, filename):
+def dump_structure(struct, path, filename, sort_keys=False):
     """
     This function takes a python structure, dumps it to a json string and saves the result in a file or the specified
     directory.
@@ -126,12 +126,13 @@ def dump_structure(struct, path, filename):
     :param struct: Python structure that need to be written to file.
     :param path: Path of the resulting file. If path does not exist it will be created.
     :param filename: Filename of the required file.
+    :param sort_keys: If set then sort on Keys. Default False.
     :return:
     """
     if not os.path.isdir(path):
         os.mkdir(path)
     # struct_str = json.dumps(struct, ensure_ascii=False, sort_keys=True, indent=4)
-    struct_str = json.dumps(struct, ensure_ascii=False, indent=2)
+    struct_str = json.dumps(struct, ensure_ascii=False, indent=2, sort_keys=sort_keys)
     with open(os.path.join(path, filename), 'w', encoding='utf-8') as fh:
         fh.write(struct_str)
     return
