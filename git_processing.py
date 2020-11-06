@@ -22,14 +22,14 @@ workdir = props['workdir']
 # Print commit result
 # Push
 my_repo = git.Repo(workdir)
-if my_repo.is_dirty(untracked_files=True):
-    logging.info("Preparing git update")
-    my_repo.index.add('*')
-    now_obj = datetime.datetime.now()
-    now = "{now:%d-%m-%Y %H:%M:%S}".format(now=now_obj)
-    msg = f"Snapshot from {now}"
-    res = my_repo.index.commit(msg)
-    my_repo.remotes.origin.push('master')
-    logging.info('Push finished')
-else:
-    logging.info("No changes detected")
+# Don't test on is_dirty, always True 
+# if my_repo.is_dirty(untracked_files=True):
+logging.info("Preparing git update")
+# my_repo.index.add('*')
+my_repo.git.add(update=True)
+now_obj = datetime.datetime.now()
+now = "{now:%d-%m-%Y %H:%M:%S}".format(now=now_obj)
+msg = f"Snapshot from {now}"
+res = my_repo.index.commit(msg)
+my_repo.remotes.origin.push('master')
+logging.info('Push finished')
