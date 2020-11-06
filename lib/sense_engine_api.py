@@ -8,6 +8,7 @@ import logging
 import os
 import ssl
 import websockets
+from lib import my_env
 from urllib.parse import quote
 
 
@@ -128,8 +129,9 @@ def set_stream_dir(destination, meta, workdir):
     stream = 'Work'
     if destination == 'Remote' and meta['published']:
         stream = meta['stream']['name']
-    stream_dir = os.path.join(workdir, stream)
-    logging.debug(f"Collecting info for stream {stream}")
+    # Stream_dir is guaranteed valid.
+    stream_dir = my_env.get_valid_path(workdir, stream)
+    logging.debug(f"Collecting info for stream {stream} into {stream_dir}")
     if not os.path.isdir(stream_dir):
         os.mkdir(stream_dir)
     return stream_dir

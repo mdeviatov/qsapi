@@ -7,9 +7,7 @@ git_processing.
 """
 
 import argparse
-# import asyncio
 import shutil
-from lib import my_env
 from lib.sense_engine_api import *
 
 
@@ -67,7 +65,7 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
     for sheet in sheet_list:
         sheet_handle = await get_object(websocket, sid := sid + 1, handle, sheet['qInfo']['qId'])
         sheet_name = sheet['qMeta']['title']
-        sheet_path = os.path.join(app_path, sheet_name)
+        sheet_path = my_env.get_valid_path(app_path, sheet_name)
         sheet_layout = await get_layout(websocket, sid := sid + 1, sheet_handle)
         sheet_props = await get_fullpropertytree(websocket, sid := sid + 1, sheet_handle)
         title = sheet_props['qProperty']['qMetaDef']['title']
@@ -81,12 +79,11 @@ async def handle_sheets(websocket, handle, sheet_list, app_path):
                 logging.error(f"Issue with child collection on sheet {sheet_name}")
                 continue
             else:
-                child_path = os.path.join(sheet_path, child_type)
+                child_path = my_env.get_valid_path(sheet_path, child_type)
                 title = child['qData']['title']
                 if isinstance(title, dict) or len(title) == 0:
                     title = child_id
                 child_handle = await get_object(websocket, sid := sid + 1, handle, child_id)
-                # child_layout = await get_layout(websocket, sid := sid + 1, child_handle)
                 child_layout = await get_fullpropertytree(websocket, sid := sid+1, child_handle)
                 my_env.dump_structure(child_layout, child_path, f"{title}.json")
     return
@@ -105,9 +102,7 @@ async def main():
         stream_dir = set_stream_dir(args.target, doc['qMeta'], workdir)
         logging.info(f"Collecting info for {doc['qDocName']} on {stream_dir}")
         # Set and create Application Path
-        app_path = os.path.join(stream_dir, app_name)
-        if os.path.isdir(app_path):
-            shutil.rmtree(app_path)
+        app_path = my_env.get_valid_path(stream_dir, app_name)
         os.mkdir(app_path)
         # New websocket connection is required for each open app.
         doc_id = doc['qDocId']
@@ -126,7 +121,7 @@ async def main():
             # Get Script
             script = await get_script(websocket, sid := sid+1, app_handle)
             doc_name = os.path.splitext(doc['qDocName'])[0]
-            load_script = os.path.join(app_path, f"{doc_name}.qvs")
+            load_script = my_env.get_valid_path(app_path, f"{doc_name}.qvs")
             with open(load_script, 'wb') as fh:
                 fh.write(str.encode(script))
             # Collect Sheets, dimensions and measures layout
@@ -157,6 +152,15 @@ args = parser.parse_args()
 logging.info("Arguments: {a}".format(a=args))
 props = init_env(args.target)
 workdir = props['workdir']
+
+# Remove all stream directories
+items = os.listdir(workdir)
+items2remove = [item for item in items if item != '.git']
+for item in items2remove:
+    path = os.path.join(workdir, item)
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+
 sid = 0
 
 asyncio.run(main())

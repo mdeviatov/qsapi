@@ -14,6 +14,7 @@ import sys
 import subprocess
 from datetime import datetime
 from dotenv import load_dotenv
+from pathvalidate import sanitize_filename, validate_filepath, validate_filename, ValidationError
 
 
 def init_env(projectname, filename):
@@ -42,6 +43,30 @@ def get_modulename(scriptname):
     (filepath, filename) = os.path.split(scriptname)
     (module, fileext) = os.path.splitext(filename)
     return module
+
+
+def get_valid_path(parent, fn):
+    """
+    This function returns a valid path name for the parent path and the directory. It is an os.path.join, with
+    additional validation on dir as a valid filename.
+    We need to validate the filename, since 'some/name' will validate as a pathname, but needs to validate as filename.
+
+    :param parent: parent directory, this must be a valid directory.
+    :param fn: Directory or filename to add to the parent directory.
+    :return: a valid parent/subdir path.
+    """
+    try:
+        validate_filename(fn, platform='auto')
+    except ValidationError:
+        logging.info(f"Need to sanitize stream {fn} to {sanitize_filename(fn)}")
+        attrib_fn = fn
+        fn = sanitize_filename(fn)
+        if not os.path.isfile(os.path.join(parent, f"{fn}_changed.txt")):
+            with open(os.path.join(parent, f"{fn}_changed.txt"), 'w') as fh:
+                msg = f"Name '{attrib_fn}' changed to '{fn}'"
+                logging.info(msg)
+                fh.write(msg)
+    return os.path.join(parent, fn)
 
 
 def init_loghandler(modulename):
@@ -122,6 +147,9 @@ def dump_structure(struct, path, filename, sort_keys=False):
     """
     This function takes a python structure, dumps it to a json string and saves the result in a file or the specified
     directory.
+    This function has an attribute 'path_dict'.
+    Filename/Path validation is done using pathvalidate. This seems a better approach compared to the slugify function.
+    Slugify will slug names even if corresponding filename is valid.
 
     :param struct: Python structure that need to be written to file.
     :param path: Path of the resulting file. If path does not exist it will be created.
@@ -129,10 +157,18 @@ def dump_structure(struct, path, filename, sort_keys=False):
     :param sort_keys: If set then sort on Keys. Default False.
     :return:
     """
+    try:
+        validate_filepath(path, platform='auto')
+    except ValidationError as e:
+        logging.critical(f"Invalid path {path}: {e}")
+        return
     if not os.path.isdir(path):
         os.mkdir(path)
-    # struct_str = json.dumps(struct, ensure_ascii=False, sort_keys=True, indent=4)
     struct_str = json.dumps(struct, ensure_ascii=False, indent=2, sort_keys=sort_keys)
+    try:
+        validate_filename(filename, platform='auto')
+    except ValidationError:
+        filename = sanitize_filename(filename)
     with open(os.path.join(path, filename), 'w', encoding='utf-8') as fh:
         fh.write(struct_str)
     return
