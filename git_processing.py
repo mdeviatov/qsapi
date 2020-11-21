@@ -26,7 +26,7 @@ my_repo = git.Repo(workdir)
 # if my_repo.is_dirty(untracked_files=True):
 logging.info("Preparing git update")
 # my_repo.index.add('*')
-my_repo.git.add(update=True)
+my_repo.git.add(all=True)
 now_obj = datetime.datetime.now()
 now = "{now:%d-%m-%Y %H:%M:%S}".format(now=now_obj)
 msg = f"Snapshot from {now}"
