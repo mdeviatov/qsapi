@@ -95,7 +95,8 @@ async def main():
     async with set_connection(**props) as websocket:
         msg = await websocket.recv()
         logging.debug(f"< {msg}")
-        doclist = await get_doclist(websocket, sid := sid+1)
+        doclist_all = await get_doclist(websocket, sid := sid+1)
+    doclist = [doc for doc in doclist_all if doc['qMeta']['stream']['name'] != 'BF - Monitoring apps']
     # For each application collect the information in the stream\application directory
     for doc in doclist:
         app_name = doc['qTitle']
