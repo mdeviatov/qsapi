@@ -1,5 +1,5 @@
 # qsapi
-## Goal
+## Description
 The goal of this project is to integrate Qlik Sense Apps into version control.
 
 qlik_explore.py discovers all applications on a Qlik Sense instance. 
@@ -31,3 +31,5 @@ Environment settings are defined in .env in the application root directory.
     USERDIRECTORY = <QS User Directory Name>
     USERID = <QS UserID>
     SERVERNODEID = <QS Server Node ID>
+
+The QS server needs to be resolvable. It can be in the /etc/hosts file.
