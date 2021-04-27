@@ -96,7 +96,7 @@ async def main():
         msg = await websocket.recv()
         logging.debug(f"< {msg}")
         doclist_all = await get_doclist(websocket, sid := sid + 1)
-    doclist = [doc for doc in doclist_all if doc['qMeta']['stream']['name'] != 'BF - Monitoring apps']
+    doclist = [doc for doc in doclist_all if doc['qDocName'] != 'Operations Monitor']
     # For each application collect the information in the stream\application directory
     for doc in doclist:
         app_name = doc['qTitle']
